@@ -1,0 +1,13 @@
+apiVersion: pgctl/v1
+kind: Role
+metadata:
+  name: readonly
+spec:
+  login: false
+  inherit: true
+  createrole: false
+  createdb: false
+  replication: false
+  bypassrls: false
+  connectionLimit: -1
+  comment: "Read-only role"

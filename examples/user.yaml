@@ -1,0 +1,17 @@
+apiVersion: pgctl/v1
+kind: User
+metadata:
+  name: appuser
+spec:
+  login: true
+  # inherit: true
+  createrole: false
+  createdb: false
+  # replication: false
+  # bypassrls: false
+  # connectionLimit: 5
+  password: "securepassword"
+  validUntil: "2025-12-31T23:59:59Z"
+  comment: "Application user"
+  inRoles:
+    - readonly

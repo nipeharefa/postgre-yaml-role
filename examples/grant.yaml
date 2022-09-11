@@ -1,0 +1,11 @@
+apiVersion: pgctl/v1
+kind: Grant
+metadata:
+  name: readonly-grant
+spec:
+  role: readonly
+  database: myapp
+  schema: public
+  table: "*"
+  privileges:
+    - SELECT
