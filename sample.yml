@@ -1,3 +1,5 @@
 kind: User
 data:
-  username: foo
+  username: nipe
+  password: bar
+  roleRef: readonly

@@ -2,55 +2,66 @@ package main
 
 import (
 	"bytes"
-	"fmt"
+	"context"
+	"database/sql"
 	"io"
 	"log"
+	"os"
 
-	"gopkg.in/yaml.v3"
+	_ "github.com/lib/pq"
+	"github.com/nipeharefa/postgre-yaml-role/action"
+	"github.com/nipeharefa/postgre-yaml-role/lib"
+	"github.com/spf13/cobra"
 )
-
-var sampling = `
-kind: User
-data:
-  username: foo
-  password: foo
-`
 
 type (
 	Root struct {
 		Kind string `yaml:"kind"`
 	}
+)
 
-	UserData struct {
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-	}
-	UserKind struct {
-		Data UserData `yaml:"data"`
-	}
+type (
+	Action string
 )
 
 func main() {
-	var buf bytes.Buffer
-
-	a := Root{}
-	buf.WriteString(sampling)
-
-	err := yaml.Unmarshal(buf.Bytes(), &a)
+	// var buf bytes.Buffer
+	connStr := "user=postgres dbname=postgres sslmode=disable password=password"
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatal(err)
 	}
 
-	userKind(&buf)
-}
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 
-func userKind(r io.Reader) {
-	user := UserKind{}
-	var buf bytes.Buffer
+	applyCmd := &cobra.Command{
+		Use: "apply",
+		Run: func(cmd *cobra.Command, args []string) {
 
-	buf.ReadFrom(r)
+			var buf bytes.Buffer
+			stat, _ := os.Stdin.Stat()
+			if (stat.Mode() & os.ModeCharDevice) == 0 {
+				io.Copy(&buf, os.Stdin)
+			} else {
+				term, _ := cmd.Flags().GetString("file")
+				f, _ := os.Open(term)
+				io.Copy(&buf, f)
+				f.Close()
+			}
 
-	yaml.Unmarshal(buf.Bytes(), &user)
+			lib.NewUserKind(db).Parser(context.Background(), &buf, action.ApplyAction)
+		},
+	}
 
-	fmt.Println(user)
+	applyCmd.Flags().StringP("file", "f", "", "apply changes from yaml")
+
+	rootCmd := &cobra.Command{}
+	rootCmd.AddCommand(applyCmd)
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
+
 }
