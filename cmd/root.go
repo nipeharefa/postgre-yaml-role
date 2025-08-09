@@ -39,7 +39,9 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pgctl/config.yaml)")
-	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+	if err := viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config")); err != nil {
+		fmt.Fprintf(os.Stderr, "Error binding config flag: %v\n", err)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -61,6 +63,7 @@ func initConfig() {
 	if err != nil {
 		// We won't exit here since some commands don't require a database connection
 		// fmt.Fprintf(os.Stderr, "Warning: Error connecting to database: %v\n", err)
+		_ = err // Explicitly ignore the error
 	}
 }
 

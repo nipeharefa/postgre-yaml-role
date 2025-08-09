@@ -250,7 +250,12 @@ func (db *DB) ListRoles() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log the error or handle it appropriately
+			_ = err
+		}
+	}()
 
 	var roles []string
 	for rows.Next() {
@@ -270,7 +275,12 @@ func (db *DB) ListUsers() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			// Log the error or handle it appropriately
+			_ = err
+		}
+	}()
 
 	var users []string
 	for rows.Next() {

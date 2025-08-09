@@ -1,28 +1,96 @@
-name: PostgreSQL service example
-on: push
+name: CI
+
+on:
+  push:
+    branches: [ main, master, test ]
+  pull_request:
+    branches: [ main, master, test ]
 
 jobs:
-  # Label of the container job
-  container-job:
-    # Containers must run in Linux based operating systems
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    # Service containers to run with `container-job`
     services:
-      # Label used to access the service container
       postgres:
-        # Docker Hub image
-        image: postgres
-        # Provide the password for postgres
+        image: postgres:13
         env:
           POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
-      # Downloads a copy of the code in your repository before running CI tests
-      - name: Check out repository code
-        uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test -v -race ./...
+      env:
+        PGCTL_DATABASE_HOST: localhost
+        PGCTL_DATABASE_PORT: 5432
+        PGCTL_DATABASE_USER: postgres
+        PGCTL_DATABASE_PASSWORD: postgres
+        PGCTL_DATABASE_NAME: postgres
+        PGCTL_DATABASE_SSLMODE: disable
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Build binary
+      run: |
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o pgctl-${{ matrix.goos }}-${{ matrix.goarch }} .
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: pgctl-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: pgctl-${{ matrix.goos }}-${{ matrix.goarch }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest

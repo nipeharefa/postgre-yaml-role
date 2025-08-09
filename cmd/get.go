@@ -40,11 +40,20 @@ var rolesCmd = &cobra.Command{
 
 		// Print roles in a table format
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-		fmt.Fprintln(w, "NAME")
-		for _, role := range roles {
-			fmt.Fprintln(w, role)
+		if _, err := fmt.Fprintln(w, "NAME"); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing to output: %v\n", err)
+			os.Exit(1)
 		}
-		w.Flush()
+		for _, role := range roles {
+			if _, err := fmt.Fprintln(w, role); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing to output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+		if err := w.Flush(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error flushing output: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
@@ -68,11 +77,20 @@ var usersCmd = &cobra.Command{
 
 		// Print users in a table format
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-		fmt.Fprintln(w, "NAME")
-		for _, user := range users {
-			fmt.Fprintln(w, user)
+		if _, err := fmt.Fprintln(w, "NAME"); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing to output: %v\n", err)
+			os.Exit(1)
 		}
-		w.Flush()
+		for _, user := range users {
+			if _, err := fmt.Fprintln(w, user); err != nil {
+				fmt.Fprintf(os.Stderr, "Error writing to output: %v\n", err)
+				os.Exit(1)
+			}
+		}
+		if err := w.Flush(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error flushing output: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 

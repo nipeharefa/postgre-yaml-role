@@ -16,7 +16,12 @@ func ParseFile(filename string) ([]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			// Log the error or handle it appropriately
+			_ = err
+		}
+	}()
 
 	return Parse(file)
 }
